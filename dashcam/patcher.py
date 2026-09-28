@@ -106,12 +106,28 @@ def litellm_module() -> Any:
 
 
 def _qualname(obj: Any, attr: str) -> str:
+    if inspect.ismodule(obj):
+        return f"{obj.__name__}.{attr}"
     name = getattr(obj, "__qualname__", None) or getattr(obj, "__name__", None)
     if name is None:
         name = str(id(obj))
-    if inspect.ismodule(obj):
-        return f"{obj.__name__}.{attr}"
-    return f"{name}.{attr}"
+    mod = getattr(obj, "__module__", None)
+    return f"{mod}.{name}.{attr}" if mod else f"{name}.{attr}"
+
+
+def _is_coroutine_function(fn: Any) -> bool:
+    # SDK entry points (openai/anthropic) are wrapped by decorators like
+    # @typed / @required_args, so the outer object is a plain function whose
+    # real coroutine nature only shows on __wrapped__. Follow the chain.
+    if inspect.iscoroutinefunction(fn):
+        return True
+    seen: set[int] = set()
+    while callable(fn) and hasattr(fn, "__wrapped__") and id(fn) not in seen:
+        seen.add(id(fn))
+        fn = fn.__wrapped__
+        if inspect.iscoroutinefunction(fn):
+            return True
+    return False
 
 
 def _patch_attr(obj: Any, attr: str, provider: str, kind: str, store: Store) -> str | None:
@@ -119,7 +135,9 @@ def _patch_attr(obj: Any, attr: str, provider: str, kind: str, store: Store) -> 
     if key in _patched:
         return None
     orig = getattr(obj, attr)
-    if inspect.iscoroutinefunction(orig):
+    if getattr(orig, "__dashcam_orig__", None) is not None:
+        return None  # already patched (e.g. _patched was reset externally)
+    if _is_coroutine_function(orig):
         wrapper = _make_async(orig, provider, kind, store)
     else:
         wrapper = _make_sync(orig, provider, kind, store)
@@ -134,6 +152,8 @@ def _patch_cm(obj: Any, attr: str, provider: str, kind: str, store: Store) -> st
     if key in _patched:
         return None
     orig = getattr(obj, attr)
+    if getattr(orig, "__dashcam_orig__", None) is not None:
+        return None  # already patched (e.g. _patched was reset externally)
 
     def wrapper(*args, **kwargs):
         cm = orig(*args, **kwargs)

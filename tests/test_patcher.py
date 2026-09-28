@@ -99,6 +99,8 @@ def fake_openai(monkeypatch):
                 else mod.resources.chat
             ),
         )
+    # isolate: never touch real anthropic/litellm even if they are installed
+    monkeypatch.setattr(patcher, "_available", lambda name: name == "openai")
     patcher._patched.clear()
     yield mod
     patcher._patched.clear()
