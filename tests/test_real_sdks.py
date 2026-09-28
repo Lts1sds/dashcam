@@ -15,14 +15,12 @@ import pytest
 openai = pytest.importorskip("openai", reason="openai SDK not installed")
 anthropic = pytest.importorskip("anthropic", reason="anthropic SDK not installed")
 
-import httpx  # noqa: E402
-
-try:  # newer SDKs (anthropic >= 1.6) require the httpx2 fork
-    import httpx2  # noqa: F401
-
-    HTTPX2 = True
+# newer SDKs (openai >= 3, anthropic >= 1.6) depend on the httpx2 fork; older
+# ones use plain httpx. Pick whichever is installed alongside the SDKs.
+try:
+    import httpx2 as httpx  # noqa: N813
 except ImportError:
-    HTTPX2 = False
+    import httpx  # noqa: F401
 
 from dashcam import patcher  # noqa: E402
 from dashcam.storage import Store  # noqa: E402
@@ -71,14 +69,6 @@ ANTHROPIC_SSE = (
     '"usage":{"output_tokens":2}}\n\n'
     'event: message_stop\ndata: {"type":"message_stop"}\n\n'
 )
-
-
-def _anthropic_http_mod():
-    if HTTPX2:
-        import httpx2
-
-        return httpx2
-    return httpx
 
 
 @pytest.fixture(scope="module")
@@ -191,11 +181,10 @@ def test_openai_async_stream(store):
 
 
 def test_anthropic_sync(store):
-    h = _anthropic_http_mod()
     client = anthropic.Anthropic(
         api_key="test-key",
-        http_client=h.Client(
-            transport=h.MockTransport(lambda r: h.Response(200, json=ANTHROPIC_JSON))
+        http_client=httpx.Client(
+            transport=httpx.MockTransport(lambda r: httpx.Response(200, json=ANTHROPIC_JSON))
         ),
     )
     msg = client.messages.create(
@@ -205,12 +194,11 @@ def test_anthropic_sync(store):
 
 
 def test_anthropic_stream_cm(store):
-    h = _anthropic_http_mod()
     client = anthropic.Anthropic(
         api_key="test-key",
-        http_client=h.Client(
-            transport=h.MockTransport(
-                lambda r: h.Response(
+        http_client=httpx.Client(
+            transport=httpx.MockTransport(
+                lambda r: httpx.Response(
                     200,
                     content=ANTHROPIC_SSE.encode(),
                     headers={"content-type": "text/event-stream"},
@@ -229,13 +217,11 @@ def test_anthropic_stream_cm(store):
 
 
 def test_anthropic_async(store):
-    h = _anthropic_http_mod()
-
     async def run():
         client = anthropic.AsyncAnthropic(
             api_key="test-key",
-            http_client=h.AsyncClient(
-                transport=h.MockTransport(lambda r: h.Response(200, json=ANTHROPIC_JSON))
+            http_client=httpx.AsyncClient(
+                transport=httpx.MockTransport(lambda r: httpx.Response(200, json=ANTHROPIC_JSON))
             ),
         )
         return await client.messages.create(
