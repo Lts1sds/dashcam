@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dashcam</title>
+<style>
+:root {
+  --bg: #0d1117; --panel: #161b22; --panel2: #1c2129; --border: #30363d;
+  --text: #e6edf3; --dim: #8b949e; --accent: #58a6ff; --ok: #3fb950;
+  --err: #f85149; --warn: #d29922; --tool: #bc8cff; --mono: ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--text); font: 13px/1.5 var(--mono); overflow: hidden; }
+#app { display: flex; flex-direction: column; height: 100%; }
+header {
+  display: flex; align-items: center; gap: 18px; padding: 0 16px;
+  height: 48px; border-bottom: 1px solid var(--border); background: var(--panel);
+  flex-shrink: 0;
+}
+.logo { font-size: 16px; font-weight: 700; letter-spacing: 1px; }
+.logo .cam { color: var(--accent); }
+.logo .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--err); margin-left: 6px; animation: blink 2s infinite; }
+@keyframes blink { 50% { opacity: 0.25; } }
+#stats { color: var(--dim); font-size: 12px; display: flex; gap: 14px; flex: 1; }
+#stats b { color: var(--text); font-weight: 600; }
+button {
+  background: var(--panel2); color: var(--text); border: 1px solid var(--border);
+  border-radius: 6px; padding: 5px 12px; font: inherit; cursor: pointer;
+}
+button:hover { border-color: var(--accent); color: var(--accent); }
+main { display: flex; flex: 1; min-height: 0; }
+#traces {
+  width: 320px; border-right: 1px solid var(--border); overflow-y: auto;
+  flex-shrink: 0; background: var(--bg);
+}
+.trace-item {
+  padding: 10px 12px; border-bottom: 1px solid var(--border); cursor: pointer;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.trace-item:hover { background: var(--panel); }
+.trace-item.active { background: var(--panel2); border-left: 2px solid var(--accent); }
+.trace-item .row1 { display: flex; align-items: center; gap: 8px; }
+.trace-item .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+.trace-item .meta { color: var(--dim); font-size: 11px; display: flex; gap: 10px; }
+.st-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.st-ok { background: var(--ok); } .st-error { background: var(--err); } .st-running { background: var(--warn); }
+#detail { flex: 1; overflow-y: auto; padding: 18px 22px; min-width: 0; }
+#empty { color: var(--dim); margin-top: 80px; text-align: center; }
+#empty .big { font-size: 40px; margin-bottom: 12px; }
+.t-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 6px; }
+.t-head h2 { font-size: 16px; font-weight: 600; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.t-head .sub { color: var(--dim); font-size: 12px; display: flex; gap: 12px; flex-wrap: wrap; }
+.t-head .sub b { color: var(--text); }
+.badge { font-size: 10px; padding: 2px 7px; border-radius: 10px; border: 1px solid var(--border); color: var(--dim); }
+.badge.err { color: var(--err); border-color: var(--err); }
+.timeline { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+.step { border: 1px solid var(--border); border-radius: 8px; background: var(--panel); }
+.step-head { display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; flex-wrap: wrap; }
+.step-head:hover { background: var(--panel2); }
+.step.error { border-color: var(--err); }
+.step.error .step-head .title { color: var(--err); }
+.step .title { font-weight: 600; }
+.step .spacer { flex: 1; }
+.step .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.tag { font-size: 10px; color: var(--dim); background: var(--bg); border: 1px solid var(--border); padding: 1px 7px; border-radius: 10px; }
+.tag.model { color: var(--accent); }
+.tag.cost { color: var(--warn); }
+.tag.tool { color: var(--tool); }
+.step-body { display: none; border-top: 1px solid var(--border); padding: 10px 12px; }
+.step.open .step-body { display: block; }
+.msg { margin: 6px 0; }
+.msg .role { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 4px; margin-right: 8px; }
+.role.system { background: #3d2d00; color: var(--warn); }
+.role.user { background: #0c2d6b; color: var(--accent); }
+.role.assistant { background: #0f4329; color: var(--ok); }
+.role.tool { background: #3a2a5c; color: var(--tool); }
+.msg .content { white-space: pre-wrap; word-break: break-word; margin-top: 4px; color: var(--text); font-size: 12px; }
+.msg .content.dim { color: var(--dim); }
+.json { white-space: pre-wrap; word-break: break-word; font-size: 11px; color: var(--dim); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px; margin-top: 6px; max-height: 320px; overflow: auto; }
+.label { font-size: 10px; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; margin: 10px 0 4px; }
+.tcall { margin: 4px 0; padding: 6px 8px; background: var(--bg); border: 1px solid var(--border); border-left: 2px solid var(--tool); border-radius: 4px; font-size: 12px; }
+.tcall .fn { color: var(--tool); font-weight: 600; }
+.errbox { color: var(--err); white-space: pre-wrap; word-break: break-word; background: #2d1215; border: 1px solid var(--err); border-radius: 6px; padding: 8px 10px; margin-top: 6px; font-size: 12px; }
+.actions { margin-top: 4px; display: flex; gap: 8px; }
+a.dl { color: var(--accent); font-size: 11px; text-decoration: none; }
+a.dl:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="logo"><span class="cam">dash</span>cam<span class="dot"></span></div>
+    <div id="stats"></div>
+    <button id="clearBtn" title="Delete all recorded traces">Clear</button>
+  </header>
+  <main>
+    <aside id="traces"></aside>
+    <section id="detail">
+      <div id="empty"><div class="big">&#128249;</div><div id="emptyMsg">No traces yet.</div><div id="emptySub" style="margin-top:8px">Run your agent with dashcam enabled, or try <b>dashcam demo</b>.</div></div>
+      <div id="content" style="display:none"></div>
+    </section>
+  </main>
+</div>
+<script>
+"use strict";
+const $ = (s, el) => (el || document).querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+let currentId = null;
+let tracesCache = [];
+
+function fmtCost(c) {
+  c = Number(c) || 0;
+  if (c === 0) return "$0";
+  if (c >= 1) return "$" + c.toFixed(2);
+  if (c >= 0.01) return "$" + c.toFixed(3);
+  return "$" + c.toFixed(5);
+}
+function fmtTok(t) {
+  t = Number(t) || 0;
+  if (t >= 1e6) return (t / 1e6).toFixed(1) + "M";
+  if (t >= 1e3) return (t / 1e3).toFixed(1) + "k";
+  return String(t);
+}
+function fmtDur(s) {
+  if (s == null) return "-";
+  if (s < 1) return (s * 1000).toFixed(0) + "ms";
+  if (s < 60) return s.toFixed(1) + "s";
+  return Math.floor(s / 60) + "m" + Math.round(s % 60) + "s";
+}
+function fmtTime(ts) {
+  if (!ts) return "-";
+  const d = new Date(ts * 1000);
+  return d.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit", second: "2-digit"});
+}
+function fmtDate(ts) {
+  if (!ts) return "";
+  const d = new Date(ts * 1000);
+  return d.toLocaleDateString([], {month: "short", day: "numeric"});
+}
+
+async function jget(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(url + " -> " + r.status);
+  return r.json();
+}
+
+async function refresh() {
+  try {
+    tracesCache = await jget("/api/traces");
+    renderList();
+    if (tracesCache.length > 0) {
+      $("#emptyMsg").textContent = "Select a trace.";
+      $("#emptySub").textContent = "Click a trace on the left to inspect its timeline.";
+    }
+    const st = await jget("/api/stats");
+    $("#stats").innerHTML =
+      `<span>today <b>${st.today_spans}</b> calls <b>${fmtCost(st.today_cost)}</b></span>` +
+      `<span>all <b>${st.traces}</b> traces <b>${st.spans}</b> calls <b>${fmtCost(st.cost)}</b></span>` +
+      `<span>errors <b style="color:var(--err)">${st.errors}</b></span>`;
+    if (currentId) {
+      const still = tracesCache.some(t => t.id === currentId);
+      if (still) loadTrace(currentId, true);
+    }
+  } catch (e) { /* server gone */ }
+}
+
+function renderList() {
+  const el = $("#traces");
+  if (!tracesCache.length) {
+    el.innerHTML = `<div style="padding:14px;color:var(--dim)">No traces recorded yet.</div>`;
+    return;
+  }
+  el.innerHTML = tracesCache.map(t => `
+    <div class="trace-item ${t.id === currentId ? "active" : ""}" data-id="${esc(t.id)}">
+      <div class="row1">
+        <span class="st-dot st-${esc(t.status)}" title="${esc(t.status)}"></span>
+        <span class="name">${esc(t.name || "(unnamed)")}</span>
+      </div>
+      <div class="meta">
+        <span>${fmtDate(t.started_at)} ${fmtTime(t.started_at)}</span>
+        <span>${t.span_count} call${t.span_count === 1 ? "" : "s"}</span>
+        <span>${fmtTok(Number(t.prompt_tokens) + Number(t.completion_tokens))} tok</span>
+        <span>${fmtCost(t.cost)}</span>
+      </div>
+    </div>`).join("");
+  el.querySelectorAll(".trace-item").forEach(item => {
+    item.onclick = () => select(item.dataset.id);
+  });
+}
+
+function select(id) {
+  currentId = id;
+  renderList();
+  loadTrace(id);
+}
+
+async function loadTrace(id, silent) {
+  try {
+    const data = await jget("/api/trace/" + id);
+    renderDetail(data);
+  } catch (e) {
+    if (!silent) alert("Failed to load trace: " + e);
+  }
+}
+
+function extractResponse(span) {
+  const r = span.response || {};
+  const out = { text: "", toolCalls: [], usage: null };
+  if (Array.isArray(r.choices)) {
+    const msg = (r.choices[0] || {}).message || {};
+    out.text = msg.content || "";
+    if (Array.isArray(msg.tool_calls)) out.toolCalls = msg.tool_calls;
+    if (r.usage) out.usage = r.usage;
+  } else if (typeof r.content === "string") {
+    out.text = r.content;
+    if (Array.isArray(r.tool_calls)) out.toolCalls = r.tool_calls;
+    if (r.usage) out.usage = r.usage;
+  } else if (Array.isArray(r.content)) {
+    for (const b of r.content) {
+      if (b.type === "text") out.text += (b.text || "");
+      else if (b.type === "tool_use") out.toolCalls.push({ id: b.id, function: { name: b.name, arguments: JSON.stringify(b.input ?? {}) } });
+    }
+    if (r.usage) out.usage = { prompt_tokens: r.usage.input_tokens ?? r.usage.prompt_tokens, completion_tokens: r.usage.output_tokens ?? r.usage.completion_tokens };
+  }
+  return out;
+}
+
+function msgContent(m) {
+  const c = m.content;
+  if (typeof c === "string") return c;
+  if (Array.isArray(c)) return c.map(p => typeof p === "string" ? p : (p.text || p.type || "")).join("\n");
+  if (c == null) return "";
+  return JSON.stringify(c, null, 2);
+}
+
+function renderMsg(m) {
+  let html = `<div class="msg"><span class="role ${esc(m.role || "?")}">${esc(m.role || "?")}</span>`;
+  if (m.role === "tool" && m.tool_call_id) html += `<span class="tag tool">${esc(m.name || "")} (${esc(m.tool_call_id)})</span>`;
+  if (m.name && m.role !== "tool") html += `<span class="tag">${esc(m.name)}</span>`;
+  html += `<div class="content">${esc(msgContent(m))}</div>`;
+  if (Array.isArray(m.tool_calls)) {
+    for (const tc of m.tool_calls) {
+      const fn = tc.function || {};
+      html += `<div class="tcall"><span class="fn">&#128295; ${esc(fn.name || "?")}</span>(${esc(fn.arguments || "")})</div>`;
+    }
+  }
+  html += `</div>`;
+  return html;
+}
+
+function diffNew(prevMsgs, nextMsgs) {
+  if (!Array.isArray(prevMsgs) || !Array.isArray(nextMsgs)) return [];
+  let i = 0;
+  const n = Math.min(prevMsgs.length, nextMsgs.length);
+  const key = m => JSON.stringify(m);
+  while (i < n && key(prevMsgs[i]) === key(nextMsgs[i])) i++;
+  return nextMsgs.slice(i);
+}
+
+function renderDetail(data) {
+  const { trace, spans } = data;
+  const el = $("#content");
+  const prevOpen = new Set([...el.querySelectorAll(".step.open")].map(s => s.dataset.key || ""));
+  const prevScroll = $("#detail").scrollTop;
+  $("#empty").style.display = "none";
+  el.style.display = "block";
+  const dur = trace.ended_at ? trace.ended_at - trace.started_at : null;
+  const models = [...new Set(spans.map(s => s.model).filter(Boolean))];
+  const totalTok = spans.reduce((a, s) => a + (s.prompt_tokens || 0) + (s.completion_tokens || 0), 0);
+  const totalCost = spans.reduce((a, s) => a + (s.cost || 0), 0);
+
+  let html = `
+  <div class="t-head">
+    <h2 title="${esc(trace.name || "")}">${esc(trace.name || "(unnamed trace)")}</h2>
+    <span class="badge ${trace.status === "error" ? "err" : ""}">${esc(trace.status)}</span>
+    <div class="sub">
+      <span>started <b>${fmtTime(trace.started_at)}</b></span>
+      <span>duration <b>${fmtDur(dur)}</b></span>
+      <span><b>${spans.length}</b> LLM call${spans.length === 1 ? "" : "s"}</span>
+      <span><b>${fmtTok(totalTok)}</b> tokens</span>
+      <span>cost <b>${fmtCost(totalCost)}</b></span>
+      <span class="actions"><a class="dl" href="/api/export/${esc(trace.id)}">export json</a></span>
+    </div>
+  </div>
+  <div class="sub" style="color:var(--dim);font-size:11px;margin-bottom:4px">${models.map(m => `<span class="tag model">${esc(m)}</span>`).join(" ")}</div>
+  <div class="timeline">`;
+
+  spans.forEach((span, i) => {
+    if (i > 0) {
+      const prevMsgs = (spans[i - 1].request || {}).messages;
+      const curMsgs = (span.request || {}).messages;
+      const newMsgs = diffNew(prevMsgs, curMsgs);
+      newMsgs.forEach((m, j) => {
+        if (m.role === "tool") {
+          html += `
+          <div class="step" data-key="tool-${i}-${j}">
+            <div class="step-head" onclick="this.parentElement.classList.toggle('open')">
+              <span class="title" style="color:var(--tool)">&#128295; ${esc(m.name || "tool")} executed</span>
+              <span class="spacer"></span>
+              <span class="tags"><span class="tag tool">inferred step</span></span>
+            </div>
+            <div class="step-body">
+              <div class="content" style="white-space:pre-wrap;word-break:break-word;font-size:12px">${esc(msgContent(m))}</div>
+            </div>
+          </div>`;
+        } else if (m.role === "user") {
+          html += `
+          <div class="step" data-key="user-${i}-${j}">
+            <div class="step-head" onclick="this.parentElement.classList.toggle('open')">
+              <span class="title" style="color:var(--accent)">&#128172; user message</span>
+              <span class="spacer"></span>
+            </div>
+            <div class="step-body">${renderMsg(m)}</div>
+          </div>`;
+        }
+      });
+    }
+
+    const resp = extractResponse(span);
+    const isErr = !!span.error;
+    const durS = span.ended_at ? span.ended_at - span.started_at : null;
+    const preview = isErr ? span.error.split("\n")[0].slice(0, 120)
+      : (resp.toolCalls.length ? resp.toolCalls.map(t => (t.function || {}).name).join(", ")
+         : (resp.text || "").replace(/\s+/g, " ").slice(0, 120));
+    const req = span.request || {};
+    const params = Object.assign({}, req);
+    delete params.messages;
+    delete params.tools;
+    html += `
+    <div class="step ${isErr ? "error" : ""}" data-key="span-${i}" id="span-${i}">
+      <div class="step-head" onclick="this.parentElement.classList.toggle('open')">
+        <span class="title">${isErr ? "&#10060;" : "&#129302;"} LLM call #${i + 1}</span>
+        <span style="color:var(--dim);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(preview)}</span>
+        <span class="tags">
+          <span class="tag model">${esc(span.model || "?")}</span>
+          <span class="tag">${fmtDur(durS)}</span>
+          ${resp.usage ? `<span class="tag">${fmtTok(resp.usage.prompt_tokens)}&rarr;${fmtTok(resp.usage.completion_tokens)} tok</span>` : ""}
+          ${span.cost ? `<span class="tag cost">${fmtCost(span.cost)}</span>` : ""}
+        </span>
+      </div>
+      <div class="step-body">
+        ${isErr ? `<div class="errbox">${esc(span.error)}</div>` : ""}
+        <div class="label">request messages</div>
+        ${((req.messages || []).map(renderMsg).join("")) || `<div class="content dim">(no messages captured)</div>`}
+        ${Array.isArray(req.tools) && req.tools.length ? `<div class="label">tools (${req.tools.length})</div><div class="json">${esc(JSON.stringify(req.tools, null, 2))}</div>` : ""}
+        ${Object.keys(params).length ? `<div class="label">params</div><div class="json">${esc(JSON.stringify(params, null, 2))}</div>` : ""}
+        ${!isErr ? `<div class="label">response</div>
+          ${resp.text ? `<div class="msg"><div class="content">${esc(resp.text)}</div></div>` : ""}
+          ${resp.toolCalls.map(tc => `<div class="tcall"><span class="fn">&#128295; ${esc((tc.function || {}).name || "?")}</span>(${esc((tc.function || {}).arguments || "")})</div>`).join("")}
+          ${(!resp.text && !resp.toolCalls.length) ? `<div class="json">${esc(JSON.stringify(span.response, null, 2))}</div>` : ""}` : ""}
+      </div>
+    </div>`;
+  });
+
+  html += `</div>`;
+  el.innerHTML = html;
+  el.querySelectorAll(".step").forEach(s => {
+    if (prevOpen.has(s.dataset.key)) s.classList.add("open");
+  });
+  $("#detail").scrollTop = prevScroll;
+}
+
+$("#clearBtn").onclick = async () => {
+  if (!confirm("Delete ALL recorded traces? This cannot be undone.")) return;
+  await fetch("/api/clear", { method: "POST" });
+  currentId = null;
+  $("#content").style.display = "none";
+  $("#empty").style.display = "block";
+  refresh();
+};
+
+refresh();
+setInterval(refresh, 3000);
+</script>
+</body>
+</html>

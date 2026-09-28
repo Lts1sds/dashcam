@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dashcam"
+version = "0.1.0"
+description = "The dashcam for your AI agents - zero-config local LLM/agent tracing, replay and cost debugging"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.9"
+authors = [{name = "dashcam contributors"}]
+keywords = ["llm", "agents", "observability", "tracing", "debugging", "replay", "openai", "anthropic", "litellm", "cost-tracking"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Debuggers",
+    "Topic :: System :: Monitoring",
+]
+
+[project.scripts]
+dashcam = "dashcam.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+include = ["dashcam*"]
+
+[tool.setuptools.package-data]
+dashcam = ["static/*.html"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
