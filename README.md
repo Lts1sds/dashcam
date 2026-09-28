@@ -10,6 +10,8 @@ Zero-config, local-first tracing, replay and cost debugging for LLM apps and age
 
 [Quickstart](#-quickstart) · [How it works](#-how-it-works) · [Configuration](#%EF%B8%8F-configuration) · [FAQ](#-faq)
 
+**English** | [简体中文](README.zh-CN.md) | [日本語](README.ja.md) | [한국어](README.ko.md) | [Español](README.es.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | [Русский](README.ru.md) | [Português (Brasil)](README.pt-BR.md) | [हिन्दी](README.hi.md)
+
 </div>
 
 ---

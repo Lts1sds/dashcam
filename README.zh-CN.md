@@ -10,6 +10,8 @@
 
 [快速开始](#快速开始) · [工作原理](#工作原理) · [配置](#%EF%B8%8F-配置) · [常见问题](#常见问题)
 
+[English](README.md) | **简体中文** | [日本語](README.ja.md) | [한국어](README.ko.md) | [Español](README.es.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | [Русский](README.ru.md) | [Português (Brasil)](README.pt-BR.md) | [हिन्दी](README.hi.md)
+
 </div>
 
 ---
