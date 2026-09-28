@@ -6,10 +6,21 @@ from dashcam.storage import Store
 def test_roundtrip(tmp_path):
     store = Store(str(tmp_path / "t.db"))
     tid = store.start_trace("hello trace")
-    store.record_span(tid, 0, "openai", "chat", "gpt-4o-mini",
-                      time.time() - 1, time.time(),
-                      {"model": "gpt-4o-mini", "messages": [{"role": "user", "content": "hi"}]},
-                      {"content": "hello"}, None, 10, 5, 0.0000045)
+    store.record_span(
+        tid,
+        0,
+        "openai",
+        "chat",
+        "gpt-4o-mini",
+        time.time() - 1,
+        time.time(),
+        {"model": "gpt-4o-mini", "messages": [{"role": "user", "content": "hi"}]},
+        {"content": "hello"},
+        None,
+        10,
+        5,
+        0.0000045,
+    )
     store.end_trace(tid, "ok")
 
     traces = store.list_traces()
@@ -33,9 +44,21 @@ def test_roundtrip(tmp_path):
 def test_error_span_marks_trace(tmp_path):
     store = Store(str(tmp_path / "t.db"))
     tid = store.start_trace("boom")
-    store.record_span(tid, 0, "openai", "chat", "gpt-4o",
-                      time.time() - 1, time.time(), {"messages": []}, None,
-                      "RateLimitError: 429", 0, 0, 0.0)
+    store.record_span(
+        tid,
+        0,
+        "openai",
+        "chat",
+        "gpt-4o",
+        time.time() - 1,
+        time.time(),
+        {"messages": []},
+        None,
+        "RateLimitError: 429",
+        0,
+        0,
+        0.0,
+    )
     traces = store.list_traces()
     assert traces[0]["status"] == "error"
     assert traces[0]["error_count"] == 1
@@ -54,8 +77,21 @@ def test_running_idle_becomes_ok(tmp_path):
 def test_stats_and_clear(tmp_path):
     store = Store(str(tmp_path / "t.db"))
     tid = store.start_trace("s")
-    store.record_span(tid, 0, "openai", "chat", "gpt-4o-mini",
-                      time.time(), time.time(), {}, {}, None, 100, 50, 0.00004)
+    store.record_span(
+        tid,
+        0,
+        "openai",
+        "chat",
+        "gpt-4o-mini",
+        time.time(),
+        time.time(),
+        {},
+        {},
+        None,
+        100,
+        50,
+        0.00004,
+    )
     s = store.stats()
     assert s["traces"] == 1
     assert s["spans"] == 1

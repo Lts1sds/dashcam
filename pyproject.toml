@@ -29,7 +29,13 @@ classifiers = [
 dashcam = "dashcam.cli:main"
 
 [project.optional-dependencies]
-dev = ["pytest"]
+test = ["pytest"]
+dev = ["pytest", "ruff", "mypy"]
+
+[project.urls]
+Homepage = "https://github.com/Lts1sds/dashcam"
+Documentation = "https://github.com/Lts1sds/dashcam/blob/main/docs/how-it-works.md"
+Issues = "https://github.com/Lts1sds/dashcam/issues"
 
 [tool.setuptools.packages.find]
 include = ["dashcam*"]
@@ -39,3 +45,22 @@ dashcam = ["static/*.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+exclude = ["examples", "README*.md"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+
+[tool.mypy]
+no_implicit_optional = true
+check_untyped_defs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+files = ["dashcam"]
+
+[[tool.mypy.overrides]]
+module = ["openai.*", "anthropic.*", "litellm"]
+ignore_missing_imports = true

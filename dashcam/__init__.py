@@ -14,13 +14,14 @@ def get_store():
 
 def instrument(store=None):
     from . import patcher
+
     return patcher.instrument(store or get_store())
 
 
 def trace(name=None):
     from . import context
+
     return context.trace(get_store(), name)
 
 
-__all__ = ["__version__", "Store", "default_db_path", "get_store",
-           "instrument", "trace"]
+__all__ = ["__version__", "Store", "default_db_path", "get_store", "instrument", "trace"]

@@ -10,6 +10,11 @@ LLM 앱과 에이전트를 위한 제로 설정, 로컬 우선 트레이싱·리
 
 [빠른 시작](#빠른-시작) · [작동 방식](#작동-방식) · [설정](#️-설정) · [FAQ](#faq)
 
+[![CI](https://github.com/Lts1sds/dashcam/actions/workflows/ci.yml/badge.svg)](https://github.com/Lts1sds/dashcam/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org)
+![Zero dependencies](https://img.shields.io/badge/dependencies-zero-green.svg)
+
 [English](README.md) | [简体中文](README.zh-CN.md) | [日本語](README.ja.md) | **한국어** | [Español](README.es.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | [Русский](README.ru.md) | [Português (Brasil)](README.pt-BR.md) | [हिन्दी](README.hi.md)
 
 </div>

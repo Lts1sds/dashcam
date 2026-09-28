@@ -1,6 +1,5 @@
 import asyncio
 import sys
-import time
 import types
 
 import pytest
@@ -20,10 +19,18 @@ class FakeResponse:
     model = "gpt-4o-mini"
 
     def model_dump(self):
-        return {"id": "resp1", "model": "gpt-4o-mini",
-                "choices": [{"index": 0, "finish_reason": "stop",
-                             "message": {"role": "assistant", "content": "hello there"}}],
-                "usage": {"prompt_tokens": 10, "completion_tokens": 5}}
+        return {
+            "id": "resp1",
+            "model": "gpt-4o-mini",
+            "choices": [
+                {
+                    "index": 0,
+                    "finish_reason": "stop",
+                    "message": {"role": "assistant", "content": "hello there"},
+                }
+            ],
+            "usage": {"prompt_tokens": 10, "completion_tokens": 5},
+        }
 
     usage = FakeUsage()
 
@@ -45,9 +52,11 @@ def make_fake_openai():
     class Completions:
         def create(self, **kwargs):
             if kwargs.get("stream"):
+
                 def gen():
                     yield FakeChunk("he")
                     yield FakeChunk("llo")
+
                 return gen()
             return FakeResponse()
 
@@ -71,14 +80,25 @@ def make_fake_openai():
 @pytest.fixture
 def fake_openai(monkeypatch):
     mod = make_fake_openai()
-    for name in ("openai", "openai.resources", "openai.resources.chat",
-                 "openai.resources.chat.completions"):
-        monkeypatch.setitem(sys.modules, name, getattr(
-            mod, "resources", mod).chat.completions
-            if name.endswith("completions") else
-            (mod if name == "openai" else
-             mod.resources if name == "openai.resources" else
-             mod.resources.chat))
+    for name in (
+        "openai",
+        "openai.resources",
+        "openai.resources.chat",
+        "openai.resources.chat.completions",
+    ):
+        monkeypatch.setitem(
+            sys.modules,
+            name,
+            getattr(mod, "resources", mod).chat.completions
+            if name.endswith("completions")
+            else (
+                mod
+                if name == "openai"
+                else mod.resources
+                if name == "openai.resources"
+                else mod.resources.chat
+            ),
+        )
     patcher._patched.clear()
     yield mod
     patcher._patched.clear()
@@ -90,8 +110,7 @@ def test_sync_capture(tmp_path, fake_openai):
     assert any("Completions.create" in k for k in patched)
 
     client = fake_openai.resources.chat.completions.Completions()
-    resp = client.create(model="gpt-4o-mini",
-                         messages=[{"role": "user", "content": "say hi"}])
+    resp = client.create(model="gpt-4o-mini", messages=[{"role": "user", "content": "say hi"}])
     assert resp.model == "gpt-4o-mini"
 
     traces = store.list_traces()
@@ -113,8 +132,11 @@ def test_stream_capture(tmp_path, fake_openai):
     patcher.instrument(store)
 
     client = fake_openai.resources.chat.completions.Completions()
-    out = list(client.create(model="gpt-4o-mini", stream=True,
-                             messages=[{"role": "user", "content": "hi"}]))
+    out = list(
+        client.create(
+            model="gpt-4o-mini", stream=True, messages=[{"role": "user", "content": "hi"}]
+        )
+    )
     assert len(out) == 2
 
     traces = store.list_traces()
@@ -129,8 +151,9 @@ def test_async_capture(tmp_path, fake_openai):
     patcher.instrument(store)
 
     client = fake_openai.resources.chat.completions.AsyncCompletions()
-    asyncio.run(client.create(model="gpt-4o-mini",
-                              messages=[{"role": "user", "content": "async hi"}]))
+    asyncio.run(
+        client.create(model="gpt-4o-mini", messages=[{"role": "user", "content": "async hi"}])
+    )
 
     traces = store.list_traces()
     assert traces[0]["span_count"] == 1
@@ -144,8 +167,7 @@ def test_error_capture(tmp_path, fake_openai, monkeypatch):
     assert key
 
     with pytest.raises(RuntimeError):
-        failing().create(model="gpt-4o-mini",
-                         messages=[{"role": "user", "content": "will fail"}])
+        failing().create(model="gpt-4o-mini", messages=[{"role": "user", "content": "will fail"}])
 
     traces = store.list_traces()
     assert traces[0]["status"] == "error"

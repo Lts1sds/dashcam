@@ -18,12 +18,22 @@ def _get(port, path):
 def running_server(tmp_path):
     store = Store(str(tmp_path / "t.db"))
     tid = store.start_trace("server test")
-    store.record_span(tid, 0, "openai", "chat", "gpt-4o-mini",
-                      time.time(), time.time(),
-                      {"messages": [{"role": "user", "content": "hi"}]},
-                      {"content": "yo"}, None, 3, 2, 0.000001)
-    httpd = server.ThreadingHTTPServer(
-        ("127.0.0.1", 0), server._make_handler(store))
+    store.record_span(
+        tid,
+        0,
+        "openai",
+        "chat",
+        "gpt-4o-mini",
+        time.time(),
+        time.time(),
+        {"messages": [{"role": "user", "content": "hi"}]},
+        {"content": "yo"},
+        None,
+        3,
+        2,
+        0.000001,
+    )
+    httpd = server.ThreadingHTTPServer(("127.0.0.1", 0), server._make_handler(store))
     port = httpd.server_address[1]
     t = threading.Thread(target=httpd.serve_forever, daemon=True)
     t.start()

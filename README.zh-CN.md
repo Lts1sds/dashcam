@@ -10,6 +10,11 @@
 
 [快速开始](#快速开始) · [工作原理](#工作原理) · [配置](#%EF%B8%8F-配置) · [常见问题](#常见问题)
 
+[![CI](https://github.com/Lts1sds/dashcam/actions/workflows/ci.yml/badge.svg)](https://github.com/Lts1sds/dashcam/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org)
+![Zero dependencies](https://img.shields.io/badge/dependencies-zero-green.svg)
+
 [English](README.md) | **简体中文** | [日本語](README.ja.md) | [한국어](README.ko.md) | [Español](README.es.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | [Русский](README.ru.md) | [Português (Brasil)](README.pt-BR.md) | [हिन्दी](README.hi.md)
 
 </div>
@@ -99,6 +104,8 @@ with dashcam.trace("退款处理Agent") as tid:
             └─────────────────────┘
 ```
 
+完整实现细节见 [docs/how-it-works.md](docs/how-it-works.md)（激活方式、patch 机制、流式重组、成本估算、存储与安全模型）。
+
 ### 支持的 SDK
 
 | SDK | 入口 | 同步 | 异步 | 流式 |
@@ -122,7 +129,7 @@ with dashcam.trace("退款处理Agent") as tid:
 ## 常见问题
 
 **会拖慢我的 Agent 吗？**
-每次 LLM 调用只多一次 SQLite 插入（微秒级），而 LLM 调用本身动辄几百毫秒，感知不到。
+实测（`benchmarks/bench_overhead.py`）：每次调用开销约 80 微秒、SQLite 写入约 0.08 毫秒——只占一次 500 毫秒 LLM 调用的 0.02%，感知不到。
 
 **dashcam 自己出问题怎么办？**
 所有 dashcam 内部逻辑都有防御性包裹——dashcam 内部任何异常都会被吞掉，你的程序完全不受影响。
@@ -139,7 +146,7 @@ with dashcam.trace("退款处理Agent") as tid:
 ## 开发
 
 ```bash
-git clone https://github.com/<you>/dashcam
+git clone https://github.com/Lts1sds/dashcam
 cd dashcam
 pip install -e ".[dev]"
 pytest                          # 23 个测试，无需 API Key

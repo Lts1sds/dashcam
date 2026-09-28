@@ -1,21 +1,23 @@
-import argparse
-import json
-import sys
+from __future__ import annotations
 
-from . import __version__
-from . import bootstrap, demo
+import argparse
+import sys
+from typing import Any
+
+from . import __version__, bootstrap, demo
 from .server import DEFAULT_PORT, serve
 from .storage import Store
 
 
-def _store(args):
+def _store(args: argparse.Namespace) -> Store:
     return Store(getattr(args, "db", None) or None)
 
 
-def main(argv=None):
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="dashcam",
-        description="The dashcam for your AI agents - local tracing, replay and cost debugging")
+        description="The dashcam for your AI agents - local tracing, replay and cost debugging",
+    )
     parser.add_argument("--version", action="version", version=f"dashcam {__version__}")
     sub = parser.add_subparsers(dest="cmd")
 
@@ -51,13 +53,15 @@ def main(argv=None):
         print("now run your agent with:  DASHCAM=1 python your_agent.py")
         print("(on Windows:  set DASHCAM=1 && python your_agent.py)")
     elif cmd == "uninstall":
-        path = bootstrap.uninstall()
-        print("removed" if path else "not installed")
+        removed = bootstrap.uninstall()
+        print("removed" if removed else "not installed")
     elif cmd == "export":
-        data = _store(args).get_trace(args.trace_id)
+        data: dict[str, Any] | None = _store(args).get_trace(args.trace_id)
         if data is None:
             print(f"trace not found: {args.trace_id}", file=sys.stderr)
             return 1
+        import json
+
         json.dump(data, sys.stdout, ensure_ascii=False, indent=2, default=str)
     elif cmd == "clear":
         _store(args).clear()

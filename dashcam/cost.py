@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import json
 import os
 
-PRICES = {
+PRICES: dict[str, tuple[float, float]] = {
     "gpt-4o-mini": (0.15, 0.60),
     "gpt-4o": (2.50, 10.00),
     "gpt-4.1-mini": (0.40, 1.60),
@@ -25,10 +27,10 @@ PRICES = {
     "qwen-turbo": (0.05, 0.20),
 }
 
-_cache = None
+_cache: dict[str, tuple[float, float]] | None = None
 
 
-def _prices():
+def _prices() -> dict[str, tuple[float, float]]:
     global _cache
     if _cache is None:
         table = dict(PRICES)
@@ -46,7 +48,7 @@ def _prices():
     return _cache
 
 
-def estimate(model, prompt_tokens, completion_tokens):
+def estimate(model: str, prompt_tokens: int, completion_tokens: int) -> tuple[float, bool]:
     if not model or not (prompt_tokens or completion_tokens):
         return 0.0, False
     name = model.lower()

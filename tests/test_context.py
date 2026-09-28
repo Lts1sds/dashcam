@@ -25,10 +25,12 @@ def test_new_trace_after_idle(tmp_path):
 
 
 def test_derive_name():
-    kwargs = {"messages": [
-        {"role": "system", "content": "You are helpful."},
-        {"role": "user", "content": "Find   the best pizza in   town please"},
-    ]}
+    kwargs = {
+        "messages": [
+            {"role": "system", "content": "You are helpful."},
+            {"role": "user", "content": "Find   the best pizza in   town please"},
+        ]
+    }
     assert context.derive_name(kwargs) == "Find the best pizza in town please"
     assert context.derive_name({"messages": []}) is None
     assert context.derive_name({}) is None

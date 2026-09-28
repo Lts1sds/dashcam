@@ -1,12 +1,18 @@
+from __future__ import annotations
+
 import threading
 import time
+from collections.abc import Iterator
 from contextlib import contextmanager
+from typing import Any
+
+from .storage import Store
 
 _local = threading.local()
 IDLE_TIMEOUT = 300.0
 
 
-def derive_name(kwargs):
+def derive_name(kwargs: dict[str, Any] | None) -> str | None:
     msgs = kwargs.get("messages") if isinstance(kwargs, dict) else None
     if not isinstance(msgs, list):
         return None
@@ -28,7 +34,7 @@ def derive_name(kwargs):
     return None
 
 
-def current_trace(store, name=None):
+def current_trace(store: Store, name: str | None = None) -> str:
     now = time.time()
     st = getattr(_local, "trace", None)
     if st is not None and now - st[1] < IDLE_TIMEOUT:
@@ -43,20 +49,20 @@ def current_trace(store, name=None):
     return tid
 
 
-def next_idx():
+def next_idx() -> int:
     i = getattr(_local, "span_idx", 0)
     _local.span_idx = i + 1
     return i
 
 
-def start_explicit(store, name=None):
+def start_explicit(store: Store, name: str | None = None) -> str:
     tid = store.start_trace(name)
     _local.trace = (tid, time.time(), name)
     _local.span_idx = 0
     return tid
 
 
-def end_explicit(store, tid):
+def end_explicit(store: Store, tid: str) -> None:
     store.end_trace(tid, "ok")
     st = getattr(_local, "trace", None)
     if st is not None and st[0] == tid:
@@ -64,7 +70,7 @@ def end_explicit(store, tid):
 
 
 @contextmanager
-def trace(store, name=None):
+def trace(store: Store, name: str | None = None) -> Iterator[str]:
     tid = start_explicit(store, name)
     try:
         yield tid

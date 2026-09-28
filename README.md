@@ -10,6 +10,11 @@ Zero-config, local-first tracing, replay and cost debugging for LLM apps and age
 
 [Quickstart](#-quickstart) · [How it works](#-how-it-works) · [Configuration](#%EF%B8%8F-configuration) · [FAQ](#-faq)
 
+[![CI](https://github.com/Lts1sds/dashcam/actions/workflows/ci.yml/badge.svg)](https://github.com/Lts1sds/dashcam/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org)
+![Zero dependencies](https://img.shields.io/badge/dependencies-zero-green.svg)
+
 **English** | [简体中文](README.zh-CN.md) | [日本語](README.ja.md) | [한국어](README.ko.md) | [Español](README.es.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | [Русский](README.ru.md) | [Português (Brasil)](README.pt-BR.md) | [हिन्दी](README.hi.md)
 
 </div>
@@ -100,6 +105,7 @@ Without explicit boundaries, calls are grouped automatically by thread + activit
 ```
 
 dashcam patches the client classes of installed SDKs at import time. Your program's behavior is untouched — if dashcam itself ever fails, it fails silently and your agent keeps running.
+Full internals: [docs/how-it-works.md](docs/how-it-works.md) — activation, patching, streaming reassembly, cost estimation, storage, and the safety model.
 
 ### Supported SDKs
 
@@ -135,7 +141,7 @@ dashcam clear          # delete all traces
 ## FAQ
 
 **Does it slow down my agent?**
-Recording is a single SQLite insert per LLM call (microseconds). Your LLM calls take hundreds of milliseconds. You won't notice.
+Measured with `benchmarks/bench_overhead.py`: ~80 µs overhead per call, ~0.08 ms per SQLite write — about 0.02% of a 500 ms LLM call. You won't notice.
 
 **What if dashcam breaks?**
 All dashcam logic is wrapped defensively — if anything inside dashcam throws, the exception is swallowed and your program continues unaffected.
@@ -152,7 +158,7 @@ Chunks are accumulated (text, tool-call fragments, usage) and recorded when the 
 ## Development
 
 ```bash
-git clone https://github.com/<you>/dashcam
+git clone https://github.com/Lts1sds/dashcam
 cd dashcam
 pip install -e ".[dev]"
 pytest                       # 23 tests, no API keys needed
