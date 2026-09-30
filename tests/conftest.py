@@ -15,6 +15,17 @@ def clean_thread_context():
     context._local.trace = None
 
 
+@pytest.fixture(scope="module")
+def restore_real_sdks_fn():
+    """Inject the restore helper as a fixture.
+
+    Test modules must NOT do `from tests.conftest import ...` - that breaks
+    under the bare `pytest` entry point where the repo root is not on
+    sys.path (CI), while `python -m pytest` (local) hides the problem.
+    """
+    return restore_real_sdks
+
+
 def restore_real_sdks() -> None:
     """Fully unwrap dashcam wrappers from the real SDK classes.
 

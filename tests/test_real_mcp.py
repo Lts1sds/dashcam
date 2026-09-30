@@ -18,16 +18,14 @@ from dashcam.storage import Store  # noqa: E402
 
 
 @pytest.fixture(scope="module")
-def store(tmp_path_factory):
+def store(tmp_path_factory, restore_real_sdks_fn):
     s = Store(str(tmp_path_factory.mktemp("realmcp") / "realmcp.db"))
     patched = patcher.instrument(s)
     assert any("call_tool" in k for k in patched), patched
 
     yield s
 
-    from tests.conftest import restore_real_sdks
-
-    restore_real_sdks()
+    restore_real_sdks_fn()
     s.close()
 
 
