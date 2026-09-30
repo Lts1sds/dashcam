@@ -57,7 +57,7 @@ Windows 下：`set DASHCAM=1 && python your_agent.py`
 
 ```python
 import dashcam
-dashcam.instrument()   # 自动 patch 已安装的 openai / anthropic / litellm
+dashcam.instrument()   # 自动 patch 已安装的 openai / anthropic / litellm / mcp
 ```
 
 ### 方式 C —— 显式 trace 边界（可选）
@@ -87,7 +87,7 @@ with dashcam.trace("退款处理Agent") as tid:
 ```
                     你的程序
                        │
-          openai / anthropic / litellm SDK 调用
+          openai / anthropic / litellm / mcp SDK 调用
                        │
             ┌──────────▼──────────┐
             │  dashcam patcher    │   启动时 monkey-patch SDK 入口
@@ -113,6 +113,7 @@ with dashcam.trace("退款处理Agent") as tid:
 | openai >= 1.0 | `chat.completions.create`、`responses.create` | ✅ | ✅ | ✅ |
 | anthropic | `messages.create`、`messages.stream` | ✅ | ✅ | ✅ |
 | litellm | `completion`、`acompletion` | ✅ | ✅ | ✅ |
+| mcp >= 1.0 | `ClientSession.call_tool`, `list_tools`, `read_resource` | — | ✅ | — |
 
 经由这些入口的调用（LangChain、AutoGen、CrewAI、litellm 路由的 OpenAI 兼容端点……）都会被自动捕获。
 

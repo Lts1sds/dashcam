@@ -256,9 +256,78 @@ def _simple(store, now):
     store.end_trace(tid, "ok")
 
 
+def _mcp_span(store, tid, idx, tool, started, arguments, text, dur=0.6, is_error=False):
+    request = {"name": tool, "arguments": arguments}
+    response = {
+        "content": [{"type": "text", "text": text}],
+        "isError": is_error,
+        "structuredContent": None,
+    }
+    store.record_span(
+        tid, idx, "mcp", "call_tool", tool, started, started + dur, request, response, None, 0, 0, 0
+    )
+
+
+def _mcp_trace(store, now):
+    model = "gpt-4o-mini"
+    t = now - 760.0
+    tid = store.start_trace("Agent research with MCP tools", t)
+
+    msgs = [
+        {"role": "system", "content": SYSTEM},
+        {
+            "role": "user",
+            "content": "Check the repo state and summarize the recent changes to the auth module.",
+        },
+    ]
+    tc1 = [_tc("call_101", "read_file", '{"path": "src/auth/session.py"}')]
+    _span(store, tid, 0, model, t, msgs, TOOLS, None, tc1, 96, 18, dur=1.1)
+
+    _mcp_span(
+        store,
+        tid,
+        1,
+        "read_file",
+        t + 2.0,
+        {"path": "src/auth/session.py"},
+        "class SessionStore:\n    def refresh(self, token):\n"
+        "        # rotated refresh tokens (was: static expiry)\n"
+        "        ...",
+    )
+    _mcp_span(
+        store,
+        tid,
+        2,
+        "git_diff",
+        t + 3.4,
+        {"repo": ".", "files": ["src/auth/"]},
+        "error: this tool must be run inside a git work tree",
+        dur=0.2,
+        is_error=True,
+    )
+
+    msgs = msgs + [
+        _assistant(None, tc1),
+        _tool(
+            "call_101",
+            "read_file",
+            "SessionStore.refresh() now rotates refresh tokens instead of using static expiry.",
+        ),
+    ]
+    final = (
+        "Recent auth module changes: SessionStore.refresh() was reworked "
+        "to rotate refresh tokens on every use, replacing the old static "
+        "expiry scheme. The git_diff tool failed (not a git work tree), "
+        "so the summary is based on the file contents only."
+    )
+    _span(store, tid, 3, model, t + 5.2, msgs, TOOLS, final, None, 214, 62, dur=2.0)
+    store.end_trace(tid, "ok")
+
+
 def run(store):
     now = time.time()
     _research(store, now)
+    _mcp_trace(store, now)
     _failure(store, now)
     _simple(store, now)
-    return 3
+    return 4

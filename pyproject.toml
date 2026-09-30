@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dashcam"
-version = "0.1.0"
+version = "0.2.0"
 description = "The dashcam for your AI agents - zero-config local LLM/agent tracing, replay and cost debugging"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.9"
 authors = [{name = "dashcam contributors"}]
-keywords = ["llm", "agents", "observability", "tracing", "debugging", "replay", "openai", "anthropic", "litellm", "cost-tracking"]
+keywords = ["llm", "agents", "observability", "tracing", "debugging", "replay", "openai", "anthropic", "litellm", "mcp", "model-context-protocol", "cost-tracking"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -29,8 +29,8 @@ classifiers = [
 dashcam = "dashcam.cli:main"
 
 [project.optional-dependencies]
-test = ["pytest"]
-dev = ["pytest", "ruff", "mypy"]
+test = ["pytest", "openai", "anthropic", "httpx", "mcp; python_version >= '3.10'"]
+dev = ["pytest", "ruff", "mypy", "openai", "anthropic", "httpx", "mcp; python_version >= '3.10'"]
 
 [project.urls]
 Homepage = "https://github.com/Lts1sds/dashcam"
@@ -62,5 +62,5 @@ warn_unused_ignores = true
 files = ["dashcam"]
 
 [[tool.mypy.overrides]]
-module = ["openai.*", "anthropic.*", "litellm"]
+module = ["openai.*", "anthropic.*", "litellm", "mcp.*"]
 ignore_missing_imports = true

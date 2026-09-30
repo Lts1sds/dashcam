@@ -57,7 +57,7 @@ Windows पर: `set DASHCAM=1 && python your_agent.py`
 
 ```python
 import dashcam
-dashcam.instrument()   # मौजूदा openai / anthropic / litellm को पैच करता है
+dashcam.instrument()   # मौजूदा openai / anthropic / litellm / mcp को पैच करता है
 ```
 
 ### विकल्प C — स्पष्ट ट्रेस सीमाएँ (वैकल्पिक)
@@ -87,7 +87,7 @@ with dashcam.trace("refund-processing-agent") as tid:
 ```
                     आपका प्रोग्राम
                          │
-        openai / anthropic / litellm SDK कॉल
+        openai / anthropic / litellm / mcp SDK कॉल
                          │
               ┌──────────▼──────────┐
               │  dashcam patcher   │   SDK एंट्री पॉइंट्स को monkey-patch
@@ -113,6 +113,7 @@ dashcam इंपोर्ट के समय इंस्टॉल किए S
 | openai >= 1.0 | `chat.completions.create`, `responses.create` | ✅ | ✅ | ✅ |
 | anthropic | `messages.create`, `messages.stream` | ✅ | ✅ | ✅ |
 | litellm | `completion`, `acompletion` | ✅ | ✅ | ✅ |
+| mcp >= 1.0 | `ClientSession.call_tool`, `list_tools`, `read_resource` | — | ✅ | — |
 
 इनके ज़रिए जाने वाली हर चीज़ (LangChain, AutoGen, CrewAI, litellm से रूट हुए OpenAI-कंपैटिबल एंडपॉइंट, ...) अपने आप कैप्चर हो जाती है।
 

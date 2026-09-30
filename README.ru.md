@@ -57,7 +57,7 @@ DASHCAM=1 python your_agent.py           # всё. всё записываетс
 
 ```python
 import dashcam
-dashcam.instrument()   # патчит openai / anthropic / litellm, если установлены
+dashcam.instrument()   # патчит openai / anthropic / litellm / mcp, если установлены
 ```
 
 ### Вариант C — явные границы трейса (опционально)
@@ -87,7 +87,7 @@ with dashcam.trace("refund-processing-agent") as tid:
 ```
                     ваша программа
                          │
-        вызовы SDK openai / anthropic / litellm
+        вызовы SDK openai / anthropic / litellm / mcp
                          │
               ┌──────────▼──────────┐
               │  dashcam patcher   │   monkey-patch точек входа SDK
@@ -114,6 +114,7 @@ dashcam патчит клиентские классы установленны�
 | openai >= 1.0 | `chat.completions.create`, `responses.create` | ✅ | ✅ | ✅ |
 | anthropic | `messages.create`, `messages.stream` | ✅ | ✅ | ✅ |
 | litellm | `completion`, `acompletion` | ✅ | ✅ | ✅ |
+| mcp >= 1.0 | `ClientSession.call_tool`, `list_tools`, `read_resource` | — | ✅ | — |
 
 Всё, что идёт через эти точки (LangChain, AutoGen, CrewAI, OpenAI-совместимые эндпоинты через litellm, ...), захватывается автоматически.
 
@@ -156,7 +157,7 @@ python examples/demo_agent.py   # офлайн-демо цикла агента
 
 ## Планы
 
-- [ ] Захват tool-calls MCP
+- [x] Захват tool-calls MCP
 - [ ] Diff-вид промптов (что изменилось между вызовами)
 - [ ] Поиск по всем трейсам
 - [ ] Воспроизведение одного шага в REPL (путешествие во времени)

@@ -77,26 +77,11 @@ def store(tmp_path_factory):
     patched = patcher.instrument(s)
     assert len(patched) >= 8, patched
     yield s
-    # restore the real SDK classes (unwrap the full __dashcam_orig__ chain)
-    from anthropic.resources import messages as mm
-    from openai.resources import responses as rr
-    from openai.resources.chat import completions as cc
+    # restore the real SDK classes (unwrap the full __dashcam_orig__ chain);
+    # instrument() patched ALL installed SDKs, not just openai/anthropic.
+    from tests.conftest import restore_real_sdks
 
-    for cls, attr in [
-        (cc.Completions, "create"),
-        (cc.AsyncCompletions, "create"),
-        (rr.Responses, "create"),
-        (rr.AsyncResponses, "create"),
-        (mm.Messages, "create"),
-        (mm.AsyncMessages, "create"),
-        (mm.Messages, "stream"),
-        (mm.AsyncMessages, "stream"),
-    ]:
-        fn = getattr(cls, attr, None)
-        while getattr(fn, "__dashcam_orig__", None) is not None:
-            fn = fn.__dashcam_orig__
-        setattr(cls, attr, fn)
-    patcher._patched.clear()
+    restore_real_sdks()
     s.close()
 
 

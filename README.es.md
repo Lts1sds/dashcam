@@ -57,7 +57,7 @@ En Windows: `set DASHCAM=1 && python your_agent.py`
 
 ```python
 import dashcam
-dashcam.instrument()   # parchea openai / anthropic / litellm si están presentes
+dashcam.instrument()   # parchea openai / anthropic / litellm / mcp si están presentes
 ```
 
 ### Opción C — límites de traza explícitos (opcional)
@@ -87,7 +87,7 @@ Sin límites explícitos, las llamadas se agrupan automáticamente por hilo + in
 ```
                     tu programa
                          │
-        llamadas al SDK openai / anthropic / litellm
+        llamadas al SDK openai / anthropic / litellm / mcp
                          │
               ┌──────────▼──────────┐
               │  dashcam patcher   │   parchea los puntos de entrada del SDK
@@ -114,6 +114,7 @@ dashcam parchea las clases cliente de los SDK instalados en el momento del impor
 | openai >= 1.0 | `chat.completions.create`, `responses.create` | ✅ | ✅ | ✅ |
 | anthropic | `messages.create`, `messages.stream` | ✅ | ✅ | ✅ |
 | litellm | `completion`, `acompletion` | ✅ | ✅ | ✅ |
+| mcp >= 1.0 | `ClientSession.call_tool`, `list_tools`, `read_resource` | — | ✅ | — |
 
 Todo lo que pase por estos (LangChain, AutoGen, CrewAI, endpoints compatibles con OpenAI vía litellm, ...) se captura automáticamente.
 
@@ -150,13 +151,13 @@ Los fragmentos (texto, fragmentos de tool-calls, usage) se acumulan y se graban 
 git clone https://github.com/Lts1sds/dashcam
 cd dashcam
 pip install -e ".[dev]"
-pytest                       # 23 tests, sin API keys
+pytest                       # 34 tests, sin API keys
 python examples/demo_agent.py   # demo de bucle de agente sin conexión
 ```
 
 ## Roadmap
 
-- [ ] Captura de tool-calls MCP
+- [x] Captura de tool-calls MCP
 - [ ] Vista diff de prompts (qué cambió entre llamadas)
 - [ ] Búsqueda en todas las trazas
 - [ ] Reproducción de un solo paso en un REPL (viaje en el tiempo)

@@ -57,7 +57,7 @@ Windows の場合：`set DASHCAM=1 && python your_agent.py`
 
 ```python
 import dashcam
-dashcam.instrument()   # openai / anthropic / litellm があれば自動パッチ
+dashcam.instrument()   # openai / anthropic / litellm / mcp があれば自動パッチ
 ```
 
 ### 方式 C — 明示的なトレース境界（任意）
@@ -87,7 +87,7 @@ with dashcam.trace("refund-processing-agent") as tid:
 ```
                     あなたのプログラム
                          │
-        openai / anthropic / litellm SDK 呼び出し
+        openai / anthropic / litellm / mcp SDK 呼び出し
                          │
               ┌──────────▼──────────┐
               │  dashcam patcher    │   SDK エントリーポイントを monkey-patch
@@ -113,6 +113,7 @@ dashcam は、インストール済み SDK のクライアントクラスをイ�
 | openai >= 1.0 | `chat.completions.create`、`responses.create` | ✅ | ✅ | ✅ |
 | anthropic | `messages.create`、`messages.stream` | ✅ | ✅ | ✅ |
 | litellm | `completion`、`acompletion` | ✅ | ✅ | ✅ |
+| mcp >= 1.0 | `ClientSession.call_tool`, `list_tools`, `read_resource` | — | ✅ | — |
 
 これらを経由するもの（LangChain、AutoGen、CrewAI、litellm 経由の OpenAI 互換エンドポイントなど）は自動的にキャプチャされます。
 

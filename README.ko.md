@@ -57,7 +57,7 @@ Windows: `set DASHCAM=1 && python your_agent.py`
 
 ```python
 import dashcam
-dashcam.instrument()   # 설치된 openai / anthropic / litellm을 자동 패치
+dashcam.instrument()   # 설치된 openai / anthropic / litellm / mcp을 자동 패치
 ```
 
 ### 방법 C — 명시적 트레이스 경계 (선택)
@@ -87,7 +87,7 @@ with dashcam.trace("refund-processing-agent") as tid:
 ```
                     당신의 프로그램
                        │
-          openai / anthropic / litellm SDK 호출
+          openai / anthropic / litellm / mcp SDK 호출
                        │
             ┌──────────▼──────────┐
             │  dashcam patcher   │   SDK 진입점을 monkey-patch
@@ -113,6 +113,7 @@ dashcam은 설치된 SDK의 클라이언트 클래스를 import 시점에 패치
 | openai >= 1.0 | `chat.completions.create`, `responses.create` | ✅ | ✅ | ✅ |
 | anthropic | `messages.create`, `messages.stream` | ✅ | ✅ | ✅ |
 | litellm | `completion`, `acompletion` | ✅ | ✅ | ✅ |
+| mcp >= 1.0 | `ClientSession.call_tool`, `list_tools`, `read_resource` | — | ✅ | — |
 
 이들을 경유하는 모든 것(LangChain, AutoGen, CrewAI, litellm 라우팅 OpenAI 호환 엔드포인트 등)은 자동으로 캡처됩니다.
 

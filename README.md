@@ -6,7 +6,7 @@
 
 **The dashcam for your AI agents.**
 
-Zero-config, local-first tracing, replay and cost debugging for LLM apps and agents.
+Zero-config, local-first tracing, replay and cost debugging for LLM apps and agents — now with MCP tool-call capture.
 
 [Quickstart](#-quickstart) · [How it works](#-how-it-works) · [Configuration](#%EF%B8%8F-configuration) · [FAQ](#-faq)
 
@@ -57,7 +57,7 @@ On Windows: `set DASHCAM=1 && python your_agent.py`
 
 ```python
 import dashcam
-dashcam.instrument()   # patches openai / anthropic / litellm if present
+dashcam.instrument()   # patches openai / anthropic / litellm / mcp if present
 ```
 
 ### Option C — explicit trace boundaries (optional)
@@ -77,6 +77,7 @@ Without explicit boundaries, calls are grouped automatically by thread + activit
 
 - **Timeline replay** — every LLM call in order, with full request messages, params, tools and responses. Click any step to expand.
 - **Inferred tool steps** — dashcam diffs consecutive message arrays to reconstruct *what your agent did between calls* (tool executions, user turns) — **without any framework integration**.
+- **MCP tool-call capture** — calls made through the official `mcp` SDK (`ClientSession.call_tool`, `list_tools`, `read_resource`) are recorded as tool cards on the timeline, so LLM steps and MCP tool steps appear in one replay.
 - **Failure attribution** — failed calls get red cards with the full exception. The trace list shows errors at a glance.
 - **Cost & token accounting** — per-call and per-trace token counts and USD cost estimates for common OpenAI / Anthropic / DeepSeek / Gemini / Qwen models. Bring your own price table via `DASHCAM_PRICES`.
 - **Streaming support** — streamed responses are reassembled and recorded, including tool-call fragments.
@@ -87,7 +88,7 @@ Without explicit boundaries, calls are grouped automatically by thread + activit
 ```
                     your program
                          │
-        openai / anthropic / litellm SDK calls
+    openai / anthropic / litellm / mcp SDK calls
                          │
               ┌──────────▼──────────┐
               │  dashcam patcher    │   monkey-patches SDK entry points
@@ -114,8 +115,9 @@ Full internals: [docs/how-it-works.md](docs/how-it-works.md) — activation, pat
 | openai >= 1.0 | `chat.completions.create`, `responses.create` | ✅ | ✅ | ✅ |
 | anthropic | `messages.create`, `messages.stream` | ✅ | ✅ | ✅ |
 | litellm | `completion`, `acompletion` | ✅ | ✅ | ✅ |
+| mcp >= 1.0 | `ClientSession.call_tool`, `list_tools`, `read_resource` | — | ✅ | — |
 
-Anything routed through these (LangChain, AutoGen, CrewAI, OpenAI-compatible endpoints via litellm, ...) is captured automatically.
+Anything routed through these (LangChain, AutoGen, CrewAI, OpenAI-compatible endpoints via litellm, MCP servers like filesystem / git / playwright, ...) is captured automatically.
 
 ## ⚙️ Configuration
 
@@ -161,13 +163,13 @@ Chunks are accumulated (text, tool-call fragments, usage) and recorded when the 
 git clone https://github.com/Lts1sds/dashcam
 cd dashcam
 pip install -e ".[dev]"
-pytest                       # 23 tests, no API keys needed
+pytest                       # 34 tests, no API keys needed
 python examples/demo_agent.py   # offline agent-loop demo
 ```
 
 ## Roadmap
 
-- [ ] MCP tool-call capture
+- [x] MCP tool-call capture (v0.2)
 - [ ] Prompt diff view (what changed between calls)
 - [ ] Search across all traces
 - [ ] Time-travel replay of a single step in a REPL

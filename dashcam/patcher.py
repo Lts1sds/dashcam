@@ -62,6 +62,11 @@ def instrument(store: Store) -> list[str]:
             patched += _patch_litellm(store)
         except ImportError:
             pass
+    if _available("mcp"):
+        try:
+            patched += _patch_mcp(store)
+        except ImportError:
+            pass
     return patched
 
 
@@ -103,6 +108,63 @@ def litellm_module() -> Any:
     import litellm
 
     return litellm
+
+
+def _patch_mcp(store: Store) -> list[str]:
+    out = []
+    from mcp.client.session import ClientSession
+
+    for attr in ("call_tool", "list_tools", "read_resource"):
+        out.append(_patch_mcp_method(ClientSession, attr, store))
+    return [x for x in out if x]
+
+
+def _patch_mcp_method(obj: Any, attr: str, store: Store) -> str | None:
+    # MCP session methods take the tool name / uri as POSITIONAL args, so the
+    # generic wrappers (which only record kwargs) would lose them. Build a
+    # dedicated wrapper that reconstructs a recordable request dict.
+    key = _qualname(obj, attr)
+    if key in _patched:
+        return None
+    orig = getattr(obj, attr)
+    if getattr(orig, "__dashcam_orig__", None) is not None:
+        return None
+
+    async def wrapper(*args: Any, **kwargs: Any) -> Any:
+        started = time.time()
+        real = args[1:]  # args[0] is the bound session instance
+        req: dict[str, Any] = {}
+        model = ""
+        hint: str | None = None
+        if attr == "call_tool":
+            name = real[0] if real and isinstance(real[0], str) else str(kwargs.get("name", ""))
+            arguments = real[1] if len(real) > 1 else kwargs.get("arguments")
+            req = {"name": name, "arguments": arguments}
+            model, hint = name, f"mcp: {name}" if name else None
+        elif attr == "read_resource":
+            uri = real[0] if real and isinstance(real[0], str) else str(kwargs.get("uri", ""))
+            req = {"uri": uri}
+            model = uri
+        else:
+            req = dict(kwargs)
+        tid = context.current_trace(store, hint)
+        idx = context.next_idx()
+        span = _SpanCtx(store, tid, idx, "mcp", attr, model, started, req)
+        try:
+            result = await orig(*args, **kwargs)
+        except Exception as e:
+            _record_error(span, e)
+            raise
+        try:
+            _record_result(span, result)
+        except Exception:
+            pass
+        return result
+
+    wrapper.__dashcam_orig__ = orig  # type: ignore[attr-defined]
+    setattr(obj, attr, wrapper)
+    _patched.add(key)
+    return key
 
 
 def _qualname(obj: Any, attr: str) -> str:

@@ -57,7 +57,7 @@ Unter Windows: `set DASHCAM=1 && python your_agent.py`
 
 ```python
 import dashcam
-dashcam.instrument()   # patcht openai / anthropic / litellm, falls vorhanden
+dashcam.instrument()   # patcht openai / anthropic / litellm / mcp, falls vorhanden
 ```
 
 ### Option C — explizite Trace-Grenzen (optional)
@@ -87,7 +87,7 @@ Ohne explizite Grenzen werden Aufrufe automatisch nach Thread + Aktivitätsabsta
 ```
                     dein Programm
                          │
-        openai / anthropic / litellm SDK-Aufrufe
+        openai / anthropic / litellm / mcp SDK-Aufrufe
                          │
               ┌──────────▼──────────┐
               │  dashcam patcher   │   monkey-patcht SDK-Einstiegspunkte
@@ -113,6 +113,7 @@ dashcam patcht beim Import die Client-Klassen der installierten SDKs. Das Verhal
 | openai >= 1.0 | `chat.completions.create`, `responses.create` | ✅ | ✅ | ✅ |
 | anthropic | `messages.create`, `messages.stream` | ✅ | ✅ | ✅ |
 | litellm | `completion`, `acompletion` | ✅ | ✅ | ✅ |
+| mcp >= 1.0 | `ClientSession.call_tool`, `list_tools`, `read_resource` | — | ✅ | — |
 
 Alles, was über diese läuft (LangChain, AutoGen, CrewAI, OpenAI-kompatible Endpoints via litellm, ...) wird automatisch erfasst.
 

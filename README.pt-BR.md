@@ -57,7 +57,7 @@ No Windows: `set DASHCAM=1 && python your_agent.py`
 
 ```python
 import dashcam
-dashcam.instrument()   # faz patch do openai / anthropic / litellm se presentes
+dashcam.instrument()   # faz patch do openai / anthropic / litellm / mcp se presentes
 ```
 
 ### Opção C — fronteiras de trace explícitas (opcional)
@@ -87,7 +87,7 @@ Sem fronteiras explícitas, as chamadas são agrupadas automaticamente por threa
 ```
                     seu programa
                          │
-        chamadas ao SDK openai / anthropic / litellm
+        chamadas ao SDK openai / anthropic / litellm / mcp
                          │
               ┌──────────▼──────────┐
               │  dashcam patcher   │   monkey-patch dos pontos de entrada do SDK
@@ -114,6 +114,7 @@ O dashcam faz patch das classes de cliente dos SDKs instalados no momento do imp
 | openai >= 1.0 | `chat.completions.create`, `responses.create` | ✅ | ✅ | ✅ |
 | anthropic | `messages.create`, `messages.stream` | ✅ | ✅ | ✅ |
 | litellm | `completion`, `acompletion` | ✅ | ✅ | ✅ |
+| mcp >= 1.0 | `ClientSession.call_tool`, `list_tools`, `read_resource` | — | ✅ | — |
 
 Tudo que passa por esses pontos (LangChain, AutoGen, CrewAI, endpoints compatíveis com OpenAI via litellm, ...) é capturado automaticamente.
 
@@ -156,7 +157,7 @@ python examples/demo_agent.py   # demo offline de loop de agente
 
 ## Roadmap
 
-- [ ] Captura de tool-calls MCP
+- [x] Captura de tool-calls MCP
 - [ ] Visão de diff de prompts (o que mudou entre chamadas)
 - [ ] Busca em todos os traces
 - [ ] Replay de um único passo num REPL (viagem no tempo)

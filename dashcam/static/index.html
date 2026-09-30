@@ -279,7 +279,7 @@ function renderDetail(data) {
     <div class="sub">
       <span>started <b>${fmtTime(trace.started_at)}</b></span>
       <span>duration <b>${fmtDur(dur)}</b></span>
-      <span><b>${spans.length}</b> LLM call${spans.length === 1 ? "" : "s"}</span>
+      <span><b>${spans.length}</b> call${spans.length === 1 ? "" : "s"}</span>
       <span><b>${fmtTok(totalTok)}</b> tokens</span>
       <span>cost <b>${fmtCost(totalCost)}</b></span>
       <span class="actions"><a class="dl" href="/api/export/${esc(trace.id)}">export json</a></span>
@@ -321,6 +321,7 @@ function renderDetail(data) {
 
     const resp = extractResponse(span);
     const isErr = !!span.error;
+    const isMcp = span.provider === "mcp";
     const durS = span.ended_at ? span.ended_at - span.started_at : null;
     const preview = isErr ? span.error.split("\n")[0].slice(0, 120)
       : (resp.toolCalls.length ? resp.toolCalls.map(t => (t.function || {}).name).join(", ")
@@ -329,10 +330,19 @@ function renderDetail(data) {
     const params = Object.assign({}, req);
     delete params.messages;
     delete params.tools;
+    const reqBlock = isMcp ? "" : `
+        <div class="label">request messages</div>
+        ${((req.messages || []).map(renderMsg).join("")) || `<div class="content dim">(no messages captured)</div>`}
+        ${Array.isArray(req.tools) && req.tools.length ? `<div class="label">tools (${req.tools.length})</div><div class="json">${esc(JSON.stringify(req.tools, null, 2))}</div>` : ""}`;
+    const respBlock = isErr ? "" : `
+        <div class="label">response</div>
+        ${resp.text ? `<div class="msg"><div class="content">${esc(resp.text)}</div></div>` : ""}
+        ${resp.toolCalls.map(tc => `<div class="tcall"><span class="fn">&#128295; ${esc((tc.function || {}).name || "?")}</span>(${esc((tc.function || {}).arguments || "")})</div>`).join("")}
+        ${(!resp.text && !resp.toolCalls.length) ? `<div class="json">${esc(JSON.stringify(span.response, null, 2))}</div>` : ""}`;
     html += `
     <div class="step ${isErr ? "error" : ""}" data-key="span-${i}" id="span-${i}">
       <div class="step-head" onclick="this.parentElement.classList.toggle('open')">
-        <span class="title">${isErr ? "&#10060;" : "&#129302;"} LLM call #${i + 1}</span>
+        <span class="title" style="${isMcp ? "color:var(--tool)" : ""}">${isErr ? "&#10060;" : isMcp ? "&#128295;" : "&#129302;"} ${isMcp ? "MCP call" : "LLM call"} #${i + 1}</span>
         <span style="color:var(--dim);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(preview)}</span>
         <span class="tags">
           <span class="tag model">${esc(span.model || "?")}</span>
@@ -343,14 +353,9 @@ function renderDetail(data) {
       </div>
       <div class="step-body">
         ${isErr ? `<div class="errbox">${esc(span.error)}</div>` : ""}
-        <div class="label">request messages</div>
-        ${((req.messages || []).map(renderMsg).join("")) || `<div class="content dim">(no messages captured)</div>`}
-        ${Array.isArray(req.tools) && req.tools.length ? `<div class="label">tools (${req.tools.length})</div><div class="json">${esc(JSON.stringify(req.tools, null, 2))}</div>` : ""}
-        ${Object.keys(params).length ? `<div class="label">params</div><div class="json">${esc(JSON.stringify(params, null, 2))}</div>` : ""}
-        ${!isErr ? `<div class="label">response</div>
-          ${resp.text ? `<div class="msg"><div class="content">${esc(resp.text)}</div></div>` : ""}
-          ${resp.toolCalls.map(tc => `<div class="tcall"><span class="fn">&#128295; ${esc((tc.function || {}).name || "?")}</span>(${esc((tc.function || {}).arguments || "")})</div>`).join("")}
-          ${(!resp.text && !resp.toolCalls.length) ? `<div class="json">${esc(JSON.stringify(span.response, null, 2))}</div>` : ""}` : ""}
+        ${reqBlock}
+        ${Object.keys(params).length ? `<div class="label">${isMcp ? "tool call" : "params"}</div><div class="json">${esc(JSON.stringify(params, null, 2))}</div>` : ""}
+        ${respBlock}
       </div>
     </div>`;
   });

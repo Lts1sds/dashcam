@@ -42,7 +42,13 @@ def main(argv: list[str] | None = None) -> int:
     cmd = args.cmd or "serve"
 
     if cmd == "serve":
-        serve(_store(args), port=args.port, open_browser=not args.no_open)
+        # bare `dashcam` (no subcommand) falls through to serve, where the
+        # --port/--no-open options were never parsed - fall back to defaults.
+        serve(
+            _store(args),
+            port=getattr(args, "port", None) or DEFAULT_PORT,
+            open_browser=not getattr(args, "no_open", False),
+        )
     elif cmd == "demo":
         n = demo.run(_store(args))
         print(f"generated {n} demo traces")
